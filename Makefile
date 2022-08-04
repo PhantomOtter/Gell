@@ -1,5 +1,4 @@
-###########################################################
-reference: https://github.com/TravisWThompson1/Makefile_Example_CUDA_CPP_To_Executable
+# reference: https://github.com/TravisWThompson1/Makefile_Example_CUDA_CPP_To_Executable
 
 # CUDA directory
 CUDA_ROOT_DIR=/usr/local/cuda
