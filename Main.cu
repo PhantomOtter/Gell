@@ -1,3 +1,6 @@
+// Gell by Jiayi Du
+// dujy@g.ucla.edu
+// August 1st, 2022
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h" 
@@ -102,7 +105,6 @@ int main(void)
 	GpuCell = CpuCell;
 	Cell* GC = thrust::raw_pointer_cast(GpuCell.data());
 
-
 	MechanicsMesh_struct MecMesh;
 
 	//Simu core
@@ -115,7 +117,6 @@ int main(void)
 	float current_cell_time = 0.f;
 	int SimuIter = 0;
 	int iter_savegap = Save_data_gap / Biology_dt;
-
 
 	for (float current_cell_time = 0.f; current_cell_time < Max_Simulation_Time; current_cell_time += Biology_dt) {
 		SimuIter++;
@@ -193,10 +194,9 @@ int main(void)
 			gapduration = 0;
 			showsimutimestart = clock();
 		}
-		//**************************** Save Show Part ****************************//
 	}
 
-
+	//**************************** Save Show Part ****************************//
 	clock_t Simuend = clock();
 	std::cout << std::endl;
 	std::cout << "Simulation Finished, takes " << (double)(Simuend - Simustart) / CLOCKS_PER_SEC << std::endl;
@@ -225,11 +225,9 @@ int main(void)
 
 	std::cout << "Whole Simulation and Saving process finished!" << std::endl;
 
-
 	// Free Spacec
 	cudaFree(curand_states);
 	cudaFree(gcurrentnum);
-
 	free(cellnumrecord);
 	free(simutimerecord);
 
