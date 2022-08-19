@@ -184,7 +184,7 @@ int main(void)
 			showsimutimeend = clock();
 			showGPUinfo(true);
 			std::cout << "Simulation from " << filesaveidx - 1 << " to " << filesaveidx << " * " << Save_data_gap/60 << " Hour finished" << std::endl;
-			std::cout << "Time " << (int)((filesaveidx - 1) * Save_data_gap / 60) << " Hour" << std::endl;
+			std::cout << "Time " << (int)((filesaveidx) * Save_data_gap / 60) << " Hour" << std::endl;
 			std::cout << "Current Cell Num is " << currentnum << std::endl;
 			std::cout << "( " << currentnum / 1000 << " K | " << (float)currentnum / 1000 / 1000 << " M )" << std::endl;
 			std::cout << "Simulation Time consumption is " << gapduration << "s" << std::endl;
