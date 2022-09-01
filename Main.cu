@@ -1,6 +1,3 @@
-// Gell by Jiayi Du
-// dujy@g.ucla.edu
-// August 1st, 2022
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h" 
@@ -30,7 +27,7 @@
 #include "./include/FMkernel.cuh"
 
 #define show_time_every_iter   false  // if false, only show every time after Save_data_gap
-#define save_intermediate_Cell true
+#define save_intermediate_Cell false
 #define save_intermediate_Mesh false
 
 // Gell version based on Thrust
@@ -40,8 +37,8 @@ int main(void)
 	showGPUinfo(true);
 
 	clock_t Initstart = clock();
-	//std::string datapath = "D:/Gell_Data/HDS/test/";
-	std::string datapath = "./data/";
+	std::string datapath = "D:/Gell_Data/HDS/test/";
+	// std::string datapath = "./data/";
 
 	// Simu time record
 	double iterduration = 0;
@@ -91,13 +88,8 @@ int main(void)
 	int* gcurrentnum = 0;
 	cudaMalloc(&gcurrentnum, sizeof(int));
 	cudaMemcpy(gcurrentnum, &currentnum, sizeof(int), cudaMemcpyHostToDevice);
-
-	int testcpuvalue = 1;
-	cudaMemcpy(&testcpuvalue, gcurrentnum, sizeof(int), cudaMemcpyDeviceToHost);
-
-	std::cout <<"Test gcurrentnum ="<< testcpuvalue <<std::endl;
-
 	thrust::host_vector<Cell> CpuCell(Max_Cell_num);
+
 	//Cell_Initialization(CpuCell, initnum);
 	Cell_sphere_Initialization(CpuCell, initnum);
 	savecsv_cell(CpuCell, currentnum, datapath + "Gell_0.csv");
@@ -105,18 +97,18 @@ int main(void)
 	GpuCell = CpuCell;
 	Cell* GC = thrust::raw_pointer_cast(GpuCell.data());
 
+	//mechanical mesh init
 	MechanicsMesh_struct MecMesh;
 
 	//Simu core
+	float current_cell_time = 0.f;
+	int SimuIter = 0;
+	int iter_savegap = Save_data_gap / Biology_dt;
 	clock_t Simustart = clock();
-	//currentnum = GpuCell.size();
 	std::cout << "Simulation Start -- Current Cell Num: " << currentnum << std::endl;
 	std::cout << std::endl;
 	clock_t showsimutimestart = clock();
 	clock_t showsimutimeend = clock();
-	float current_cell_time = 0.f;
-	int SimuIter = 0;
-	int iter_savegap = Save_data_gap / Biology_dt;
 
 	for (float current_cell_time = 0.f; current_cell_time < Max_Simulation_Time; current_cell_time += Biology_dt) {
 		SimuIter++;
@@ -130,6 +122,7 @@ int main(void)
 			MecMesh.FM_update(GpuCell, currentnum);
 			GC = thrust::raw_pointer_cast(GpuCell.data());
 
+			PreLOD(O2Mesh.p_rate, GC, currentnum);
 			for (float dift = 0.0; dift < Mechanics_dt; dift += Diffusion_dt) {
 				LODsolver(O2Mesh.p, O2Mesh.E, O2Mesh.F, O2Mesh.p_rate, GC, currentnum);
 				//FDMsolver(O2Mesh.p, O2Mesh.p_rate, GC, currentnum);
@@ -145,7 +138,7 @@ int main(void)
 		cellnumrecord[SimuIter] = currentnum;
 		simutimerecord[SimuIter] = iterduration;
 
-		//**************************** Save Show Part ****************************//
+		//**************************** Show & Save ****************************//
 
 		showandsave = (SimuIter + 1) % (int)(iter_savegap) == 0;
 
@@ -184,7 +177,7 @@ int main(void)
 			showsimutimeend = clock();
 			showGPUinfo(true);
 			std::cout << "Simulation from " << filesaveidx - 1 << " to " << filesaveidx << " * " << Save_data_gap/60 << " Hour finished" << std::endl;
-			std::cout << "Time " << (int)((filesaveidx) * Save_data_gap / 60) << " Hour" << std::endl;
+			std::cout << "Time " << (int)((filesaveidx - 1) * Save_data_gap / 60) << " Hour" << std::endl;
 			std::cout << "Current Cell Num is " << currentnum << std::endl;
 			std::cout << "( " << currentnum / 1000 << " K | " << (float)currentnum / 1000 / 1000 << " M )" << std::endl;
 			std::cout << "Simulation Time consumption is " << gapduration << "s" << std::endl;
@@ -194,13 +187,12 @@ int main(void)
 			gapduration = 0;
 			showsimutimestart = clock();
 		}
+		//**************************** Save Show Part ****************************//
 	}
 
-	//**************************** Save Show Part ****************************//
 	clock_t Simuend = clock();
 	std::cout << std::endl;
 	std::cout << "Simulation Finished, takes " << (double)(Simuend - Simustart) / CLOCKS_PER_SEC << std::endl;
-
 
 	// Save final CSV if no intermediate info is saved 
 	clock_t Savestart = clock();
@@ -217,7 +209,6 @@ int main(void)
 	clock_t Saveend = clock();
 	std::cout << "Final File Save Finished, takes " << (double)(Saveend - Savestart) / CLOCKS_PER_SEC << std::endl;
 
-
 	//thrust::host_vector<int> cpu_CellIndex_of_StartCell_of_CellMesh = CellIndex_of_StartCell_of_CellMesh;
 	//savecsv_StartCell_array(cpu_CellIndex_of_StartCell_of_CellMesh, datapath + "Gell_CellMesh_StartCell_record.csv");
 	savecsv_array(cellnumrecord, simutimerecord, datapath + "Gell_Time_record.csv");
@@ -230,7 +221,6 @@ int main(void)
 	cudaFree(gcurrentnum);
 	free(cellnumrecord);
 	free(simutimerecord);
-
 	system("pause");
 	return 0;
 }
