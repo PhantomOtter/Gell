@@ -32,12 +32,9 @@ __global__ void meshupdatekernel(float* p, float* p_rate) {
 	const int k = blockIdx.z * blockDim.z + threadIdx.z;
 	if (i >= Voxel_num || j >= Voxel_num || k >= Voxel_num) return;
 	int meshi = Find_Index(i, j, k, Voxel_num);
-	//atomicAdd(&(p[meshi]), p_rate[meshi] * dt * p[meshi]);
-	//float dp = dt * p[meshi] * p_rate[meshi];
-	//float currentp =  atomicAdd(&(p[meshi]), dp);
 	p[meshi] = p[meshi] / (1.f - p_rate[meshi] * Diffusion_dt);
-	p_rate[meshi] = 0.0;
 }
+
 
 // with boudary condition
 __global__ void LODkernel_x(float* p, float* E, float* F) {
@@ -191,6 +188,16 @@ __global__ void Setboundary(float* p, float val) {
 	p[Find_Index(i, j, N - 2, N)] = val;
 }
 
+void PreLOD(float* p_rate, Cell* cell, int num) {
+	const dim3 blockSize3d(BlockWidth3d, BlockWidth3d, BlockWidth3d);
+	const int gdim3d = (Voxel_num + BlockWidth3d - 1) / BlockWidth3d;
+	const dim3 gridSize3d(gdim3d, gdim3d, gdim3d);
+	oxy_consumption_reset << <gridSize3d, blockSize3d >> > (p_rate);
+	cudaDeviceSynchronize();
+	oxy_consumption_update << < (num + BlockWidth1d - 1) / BlockWidth1d, BlockWidth1d >> > (p_rate, cell, num);
+	cudaDeviceSynchronize();
+}
+
 void LODsolver(float* p, float* E, float* F, float* p_rate, Cell* cell, int num) {
 	const dim3 blockSize2d(BlockWidth2d, BlockWidth2d);
 	const int gdim2d = (Voxel_num + BlockWidth2d - 1) / BlockWidth2d;
@@ -200,27 +207,22 @@ void LODsolver(float* p, float* E, float* F, float* p_rate, Cell* cell, int num)
 	const int gdim3d = (Voxel_num + BlockWidth3d - 1) / BlockWidth3d;
 	const dim3 gridSize3d(gdim3d, gdim3d, gdim3d);
 
-	oxy_consumption_update << < (num + BlockWidth1d - 1) / BlockWidth1d, BlockWidth1d >> > (p_rate, cell, num);
-	cudaDeviceSynchronize();
-	meshupdatekernel << <gridSize3d, blockSize3d >> > (p, p_rate);
-	cudaDeviceSynchronize();
+	//oxy_consumption_update << < (num + BlockWidth1d - 1) / BlockWidth1d, BlockWidth1d >> > (p_rate, cell, num);
+	//cudaDeviceSynchronize();
 	Setboundary << <gridSize2d, blockSize2d >> > (p, O2_Default_Concentration);
 	cudaDeviceSynchronize();
 
+	meshupdatekernel << <gridSize3d, blockSize3d >> > (p, p_rate);
+	cudaDeviceSynchronize();
 
 	LODkernel_x << <gridSize2d, blockSize2d >> > (p, E, F);
-	//cudaDeviceSynchronize();
-	//Setboundary << <gridSize2d, blockSize2d >> > (p, O2_Default_Concentration);
 	cudaDeviceSynchronize();
 	LODkernel_y << <gridSize2d, blockSize2d >> > (p, E, F);
-	//cudaDeviceSynchronize();
-	//Setboundary << <gridSize2d, blockSize2d >> > (p, O2_Default_Concentration);
 	cudaDeviceSynchronize();
 	LODkernel_z << <gridSize2d, blockSize2d >> > (p, E, F);
-	//cudaDeviceSynchronize();
-	//Setboundary << <gridSize2d, blockSize2d >> > (p, O2_Default_Concentration);
 	cudaDeviceSynchronize();
 }
+
 
 void FDMsolver(float* p, float* p_rate, Cell* cell, int num) {
 	const dim3 blockSize2d(BlockWidth2d, BlockWidth2d);
@@ -231,8 +233,8 @@ void FDMsolver(float* p, float* p_rate, Cell* cell, int num) {
 	const int gdim3d = (Voxel_num + BlockWidth3d - 1) / BlockWidth3d;
 	const dim3 gridSize3d(gdim3d, gdim3d, gdim3d);
 
-	oxy_consumption_update << < (num + BlockWidth1d - 1) / BlockWidth1d, BlockWidth1d >> > (p_rate, cell, num);
-	cudaDeviceSynchronize();
+	//oxy_consumption_update << < (num + BlockWidth1d - 1) / BlockWidth1d, BlockWidth1d >> > (p_rate, cell, num);
+	//cudaDeviceSynchronize();
 	Setboundary << <gridSize2d, blockSize2d >> > (p, O2_Default_Concentration);
 	cudaDeviceSynchronize();
 	FDM_kernel << <gridSize3d, blockSize3d >> > (p, p_rate);
