@@ -1,3 +1,6 @@
 # Gell
 Ultra-large-scale cell-based simulation platform
-![Gell_0726_full_2](https://user-images.githubusercontent.com/98802462/188083495-a5cc6278-956f-4ab1-87d4-bd3b1ce6b973.png)
+
+A HDS example
+![Gell_0726_full_2_lowreso](https://user-images.githubusercontent.com/98802462/188084082-0c369907-37e3-49bc-a3d9-61c4955e1a71.jpg)
+
