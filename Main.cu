@@ -27,7 +27,7 @@
 #include "./include/FMkernel.cuh"
 
 #define show_time_every_iter   false  // if false, only show every time after Save_data_gap
-#define save_intermediate_Cell false
+#define save_intermediate_Cell true
 #define save_intermediate_Mesh false
 
 // Gell version based on Thrust
@@ -37,8 +37,8 @@ int main(void)
 	showGPUinfo(true);
 
 	clock_t Initstart = clock();
-	std::string datapath = "D:/Gell_Data/HDS/test/";
-	// std::string datapath = "./data/";
+	// std::string datapath = "D:/Gell_Data/HDS/test/";
+	std::string datapath = "./data/";
 
 	// Simu time record
 	double iterduration = 0;
