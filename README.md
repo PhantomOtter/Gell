@@ -2,5 +2,6 @@
 Ultra-large-scale cell-based simulation platform
 
 A HDS example
-![Gell_0726_full_2_lowreso](https://user-images.githubusercontent.com/98802462/188084082-0c369907-37e3-49bc-a3d9-61c4955e1a71.jpg)
+![Gell_0726_full_2](https://user-images.githubusercontent.com/98802462/188084155-a7fc095d-54a4-42c1-be29-eb5e6a7422a5.png)
+
 
