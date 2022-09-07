@@ -18,8 +18,6 @@
 #include "./include/RandomFunctions.cuh"
 #include "./include/BasicFunctions.cuh"
 #include "./include/Cells.cuh"
-#include "./include/Mesh.cuh"
-
 #include "./include/Initialization.cuh"
 #include "./include/FileSave.cuh"
 #include "./include/PDkernel.cuh"
@@ -37,8 +35,8 @@ int main(void)
 	showGPUinfo(true);
 
 	clock_t Initstart = clock();
-	// std::string datapath = "D:/Gell_Data/HDS/test/";
-	std::string datapath = "./data/";
+	std::string datapath = "D:/Gell_Data/HDS/test/";
+	//std::string datapath = "./data/";
 
 	// Simu time record
 	double iterduration = 0;
@@ -54,23 +52,20 @@ int main(void)
 	double* simutimerecord = 0;
 	simutimerecord = (double*)malloc((Max_Simulation_Iter + 1) * sizeof(double));
 	simutimerecord[0] = 0;
+	// simulation time without saving time
+	double gapsimutimerecord[gapsavenum] = { 0 }; 
+	// index of how may Save_data_gap(currently 360 min) of simulation has passed 
+	int filesaveidx = 0;
+	// weather Save_data_gap condition matched
+	bool showandsave = false;  
 
-	double gapsimutimerecord[gapsavenum] = { 0 };  // simulation time without saving time                  // simulation time without saving time
-	int filesaveidx = 0;        // index of how may Save_data_gap(currently 60 min) of simulation has passed 
-	bool showandsave = false;   // weather Save_data_gap condition matched
-
-	// mesh struct init
-	const dim3 blockSize2d(BlockWidth2d, BlockWidth2d);
-	const int gdim2d = (Voxel_num + BlockWidth2d - 1) / BlockWidth2d;
-	const dim3 gridSize2d(gdim2d, gdim2d);
-
-	const dim3 blockSize3d(BlockWidth3d, BlockWidth3d, BlockWidth3d);
-	const int gdim3d = (Voxel_num + BlockWidth3d - 1) / BlockWidth3d;
-	const dim3 gridSize3d(gdim3d, gdim3d, gdim3d);
-
+	///////////////////////////////////////////////////
+	// oxygen in extracellular fluid
+	// other diffusive substance and be defined similarly 
 	Mesh_struct O2Mesh(O2_Default_Concentration, O2_Diffusion_coef, O2_Decay_rate);
 	savecsv_meshslice(&O2Mesh, datapath + "Mesh_slice_0.csv");
-	// savecsv_mesh(&O2Mesh, datapath + "02_Mesh_0.csv");
+
+	///////////////////////////////////////////////////
 
 	// Random num init
 	curandState* curand_states;
@@ -122,10 +117,9 @@ int main(void)
 			MecMesh.FM_update(GpuCell, currentnum);
 			GC = thrust::raw_pointer_cast(GpuCell.data());
 
-			PreLOD(O2Mesh.p_rate, GC, currentnum);
+			O2Mesh.PreLOD(GC, currentnum);
 			for (float dift = 0.0; dift < Mechanics_dt; dift += Diffusion_dt) {
-				LODsolver(O2Mesh.p, O2Mesh.E, O2Mesh.F, O2Mesh.p_rate, GC, currentnum);
-				//FDMsolver(O2Mesh.p, O2Mesh.p_rate, GC, currentnum);
+				O2Mesh.LODsolver(GC, currentnum);
 			}
 		}
 
@@ -168,7 +162,7 @@ int main(void)
 			}
 			if (save_intermediate_Mesh) {
 				// whole mesh data
-				//O2Mesh.move_to_CPU();
+				// O2Mesh.move_to_CPU();
 				// only a slice
 				O2Mesh.Slice_to_CPU();
 				// savecsv_mesh(&O2Mesh, datapath + "Mesh_" + std::to_string(filesaveidx) + ".csv");
@@ -209,11 +203,8 @@ int main(void)
 	clock_t Saveend = clock();
 	std::cout << "Final File Save Finished, takes " << (double)(Saveend - Savestart) / CLOCKS_PER_SEC << std::endl;
 
-	//thrust::host_vector<int> cpu_CellIndex_of_StartCell_of_CellMesh = CellIndex_of_StartCell_of_CellMesh;
-	//savecsv_StartCell_array(cpu_CellIndex_of_StartCell_of_CellMesh, datapath + "Gell_CellMesh_StartCell_record.csv");
 	savecsv_array(cellnumrecord, simutimerecord, datapath + "Gell_Time_record.csv");
 	savecsv_gaparray(cellnumrecord, gapsimutimerecord, datapath + "Gell_GapTime_record.csv");
-
 	std::cout << "Whole Simulation and Saving process finished!" << std::endl;
 
 	// Free Spacec
