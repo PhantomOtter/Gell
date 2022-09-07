@@ -40,7 +40,7 @@ __global__ void Birthkernel(float* p, Cell* cell, curandState* curand_states, in
 
 	// update cell phase
 	cell[i].Volume_update();
-	bool proli = cell[i].Phase_update_physicell(randvalue, O2);   // modified to agree with physicell
+	bool proli = cell[i].Phase_update_ki67adv(randvalue, O2);   // modified to agree with physicell
 	////0 for mature (quiescent)
 	////1 divide reparation (premitotic)
 	////2 for growing (postmitotic)

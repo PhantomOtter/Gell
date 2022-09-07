@@ -86,11 +86,12 @@ __global__ void forcekernel(Cell* cell, int num, int* s, int* e) {
 					if (cell[cell2idx].sign == false) continue;
 
 					pos2 = cell[cell2idx].pos;
-
 					distance = sqrtf((pos1.x - pos2.x) * (pos1.x - pos2.x) +
 						(pos1.y - pos2.y) * (pos1.y - pos2.y) + (pos1.z - pos2.z) * (pos1.z - pos2.z) + 0.0001);
-					
 					if (distance >= thres ) continue;
+
+					///////////////////////////////////////////////////
+					// costomize your cell-cell interaction here
 
 					r2 = cell[cell2idx].r;
 					// now thres = Ra1+Ra2
@@ -106,6 +107,8 @@ __global__ void forcekernel(Cell* cell, int num, int* s, int* e) {
 					fx += (pos1.x - pos2.x) * (coefr - coefa);
 					fy += (pos1.y - pos2.y) * (coefr - coefa);
 					fz += (pos1.z - pos2.z) * (coefr - coefa);
+
+					///////////////////////////////////////////////////
 				}
 			}
 		}
@@ -114,6 +117,7 @@ __global__ void forcekernel(Cell* cell, int num, int* s, int* e) {
 	cell[i].force = { fx,fy,fz };
 }
 
+// check the total cell number
 __global__ void se_verification(int* sum, int* s, int* e, int vnum) {
 	const int i = blockDim.x * blockIdx.x + threadIdx.x;
 	if (i >= vnum) return;
@@ -122,8 +126,6 @@ __global__ void se_verification(int* sum, int* s, int* e, int vnum) {
 		atomicAdd(sum, e[i] - s[i] + 1);
 	}
 }
-
-
 
 __global__ void movementkernel(Cell* cell, int num) {
 	const int i = blockDim.x * blockIdx.x + threadIdx.x;
@@ -136,17 +138,12 @@ __global__ void movementkernel(Cell* cell, int num) {
 	float3 pos = cell[i].pos;
 	float3 of = cell[i].oldforce;
 	float3 f = cell[i].force;
-	float3 move = { 0.f,0.f,0.f };
-	move.x = dt / 2.f * (3.f * f.x - of.x);
-	move.y = dt / 2.f * (3.f * f.y - of.y);
-	move.z = dt / 2.f * (3.f * f.z - of.z);
-	pos.x += move.x;
-	pos.y += move.y;
-	pos.z += move.z;
+	pos.x += dt / 2.f * (3.f * f.x - of.x);
+	pos.y += dt / 2.f * (3.f * f.y - of.y);
+	pos.z += dt / 2.f * (3.f * f.z - of.z);
 
 	//printf("Cell %d, F(%f£¬%f£¬%f),OF(%f£¬%f£¬%f),Move(%f£¬%f£¬%f)\n", i, f.x, f.y, f.z, of.x, of.y, of.z, move.x, move.y, move.z);
-	//ÒÆ³ýÔ½½çÏ¸°û
-	float volumelimit = Volume_length;
+	//remove the outside cells
 	int3 ijk = Find_Mesh(pos,Voxel_length);
 	if (!Check_Inside(ijk)) {
 		cell[i].sign = false;
@@ -161,14 +158,11 @@ __global__ void movementkernel(Cell* cell, int num) {
 }
 
 struct MechanicsMesh_struct {
-
 	int* sum = 0;
 	int* Mech_Mesh_s = 0;
 	int* Mech_Mesh_e = 0;
 	int* key = 0;
 	const int total_voxel = Voxel_num * Voxel_num * Voxel_num ;
-
-
 
 	MechanicsMesh_struct() {
 		cudaMalloc(&sum, sizeof(int));
@@ -183,7 +177,6 @@ struct MechanicsMesh_struct {
 		cudaFree(Mech_Mesh_e);
 		cudaFree(key);
 	}
-
 
 	void FM_update(thrust::device_vector<Cell>& GpuCell, int num) {
 
@@ -206,7 +199,6 @@ struct MechanicsMesh_struct {
 
 		movementkernel << <(num + BlockWidth1d - 1) / BlockWidth1d, BlockWidth1d >> > (GC, num);
 		cudaDeviceSynchronize();
-
 	}
 
 	void Check_se() {
@@ -217,7 +209,6 @@ struct MechanicsMesh_struct {
 		cudaMemcpy(&csum, sum, sizeof(int), cudaMemcpyDeviceToHost);
 		printf("Check_se:%d\n", csum);
 	}
-
 };
 
 

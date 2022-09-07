@@ -69,13 +69,13 @@ __host__ __device__ float3 normalize(float3 dir) {
 	float len = sqrtf(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
 	return { dir.x / len,dir.y / len,dir.z / len };
 }
-// linear transfer from point a(x,y) to b(x,y) with {y=a_y|x<a_x},{y=b_y|x>b_x}
-__host__ __device__ float Linear_step(float ax, float ay, float bx, float by, float x) {
-	if (ax <= bx)
-		return (x < ax ? ay : (x > bx ? by : (ay + (x - ax) * (by - ay) / (bx - ax))));
-	else
-		return Linear_step(bx, by, ax, ay, x);
-}
+//// linear transfer from point a(x,y) to b(x,y) with {y=a_y|x<a_x},{y=b_y|x>b_x}
+//__host__ __device__ float Linear_step(float ax, float ay, float bx, float by, float x) {
+//	if (ax <= bx)
+//		return (x < ax ? ay : (x > bx ? by : (ay + (x - ax) * (by - ay) / (bx - ax))));
+//	else
+//		return Linear_step(bx, by, ax, ay, x);
+//}
 
 void showGPUinfo(bool showall = false) {
 	if (showall) {
@@ -94,7 +94,6 @@ void showGPUinfo(bool showall = false) {
 	std::cout << "Total Gpu Mem: " << total_gpu_bytes / 1024 / 1024 << " MB" << std::endl;
 }
 
-
 struct isMinusOne
 {
 	__host__ __device__
@@ -108,7 +107,6 @@ double CPUrand() {
 	double randnumber = (double)rand() / RAND_MAX;
 	return randnumber;
 }
-
 
 __device__ __host__ int __part1by2(int n) {
 	n &= 0x000003ff;                  // base10 : 1023, binary : 1111111111, len : 10
@@ -129,16 +127,14 @@ __device__ __host__ int __unpart1by2(int n) {
 }
 
 __device__ __host__ int Morton_encode(int i, int j, int k) {
-	//return __part1by2(i) | (__part1by2(j) << 1) | (__part1by2(k) << 2);
-	return Find_Index(i, j, k);
+	return __part1by2(i) | (__part1by2(j) << 1) | (__part1by2(k) << 2);
+	//return Find_Index(i, j, k);
 }
 
 __device__ __host__ int Morton_encode(int3 ijk) {
-	//return __part1by2(ijk.x) | (__part1by2(ijk.y) << 1) | (__part1by2(ijk.z) << 2);
-	return Find_Index(ijk);
+	return __part1by2(ijk.x) | (__part1by2(ijk.y) << 1) | (__part1by2(ijk.z) << 2);
+	//return Find_Index(ijk);
 }
-
-
 
 __device__ __host__ int3 Morton_decode(int m) {
 	int3 ijk = { 0,0,0 };

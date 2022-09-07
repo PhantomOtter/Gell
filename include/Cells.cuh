@@ -28,6 +28,7 @@ struct Cell {
 ////3 for apoptotic
 ////4 for early necrotic
 ////5 for late necrotic
+
 	int phase = -1;
 	float cell_clock = 0.f;
 
@@ -39,7 +40,7 @@ struct Cell {
 	__host__ __device__ void Radius_update();
 	__host__ __device__ void Volume_update();
 	//__host__ __device__ bool Phase_update(float rand, float O2);
-	__host__ __device__ bool Phase_update_physicell(float rand, float O2);
+	__host__ __device__ bool Phase_update_ki67adv(float rand, float O2);
 	//__host__ __device__ bool operator < (const Cell& a) const {
 	//	return mesh_idx < a.mesh_idx;
 	//}
@@ -141,13 +142,10 @@ void Cell::Volume_update() {
 	return;
 }
 
-bool Cell::Phase_update_physicell(float rand, float O2) {
+bool Cell::Phase_update_ki67adv(float rand, float O2) {
 
 	cell_clock = cell_clock + Biology_dt;
 	bool proliferate = false;
-	// float transition_q2pre = proliferation_prob;
-	float duration_pre2post = 13 * 60;// premitotic to postmitotic
-	float duration_post2q = 2.5 * 60; // postmitotic to mature
 
 	float apoptosis_prob = Tumor_Apoptosis_rate * Biology_dt;//0.00319f / 60; // 1.f / 8.6 / 50 / 60; // 2% of cells are in apoptotic phase
 	float proliferation_prob = 1.f * (O2 - Tumor_O2_Proliferation_Thres) / (Tumor_O2_Proliferation_Sat - Tumor_O2_Proliferation_Thres) * Tumor_Proliferation_Rate * Biology_dt;  //  quick check : 0.0432f / 60 *20;   ************************************************************ /1.2 - 18 day 1m
@@ -166,16 +164,13 @@ bool Cell::Phase_update_physicell(float rand, float O2) {
 		necrosis_prob = Tumor_Necrosis_Rate * Biology_dt;
 	}
 
-
-
 	// float Vcs_stand = 488.f;
-////0 for mature (quiescent)
-////1 divide reparation (premitotic)
-////2 for growing (postmitotic)
-////3 for apoptotic
-////4 for early necrotic
-////5 for late necrotic
-
+	////0 for mature (quiescent)
+	////1 divide reparation (premitotic)
+	////2 for growing (postmitotic)
+	////3 for apoptotic
+	////4 for early necrotic
+	////5 for late necrotic
 
 	if (phase >= 3) {
 		// dead cell
@@ -184,7 +179,7 @@ bool Cell::Phase_update_physicell(float rand, float O2) {
 			cell_clock = 0;
 		}
 
-		if (Vcs <= 24.4f) {  // 488 * 0.05
+		if (Vcs <= 0.05f * 488) {  // 488 * 0.05 = 24.4
 			sign = false;
 			cell_clock = 0;
 		}

@@ -8,7 +8,7 @@
 #include "RandomFunctions.cuh"
 #include "BasicFunctions.cuh"
 #include "Cells.cuh"
-#include "Mesh.cuh"
+#include "LODkernel.cuh"
 
 // remember to adjust save function when Testkernel is used
 //void savecsv_cell(thrust::host_vector<Cell>& C, int currentnum, const std::string f) {
@@ -81,25 +81,6 @@ void savecsv_gaparray(int* cnum, double* time, const std::string f) {
 	fprintf(outfile, "%s,%s,%s\n", "Index", "Cell Num", "Time");
 	for (int i = 0; i < Max_Simulation_Iter / Save_data_gap; i++) {
 		fprintf(outfile, "%d,%d,%f\n", i, cnum[(i + 1) * Save_data_gap - 1], time[i]);
-	}
-	fclose(outfile);
-}
-void savecsv_StartCell_array(thrust::host_vector<int>& startcell, const std::string f) {
-	const char* filename = f.c_str();
-	FILE* outfile = fopen(filename, "w");
-	fprintf(outfile, "%s,%s\n", "Index", "StartCell");
-	for (int i = 0; i < Voxel_num * Voxel_num * Voxel_num + 1; i++) {
-		fprintf(outfile, "%d,%d\n", i, startcell[i]);
-	}
-	fclose(outfile);
-}
-
-void savecsv_StartCellcheck_array(int len, thrust::host_vector<int>& array, const std::string f) {
-	const char* filename = f.c_str();
-	FILE* outfile = fopen(filename, "w");
-	fprintf(outfile, "%s,%s\n", "Index", "Value");
-	for (int i = 0; i < len; i++) {
-		fprintf(outfile, "%d,%d\n", i, array[i]);
 	}
 	fclose(outfile);
 }

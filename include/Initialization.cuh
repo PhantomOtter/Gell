@@ -13,7 +13,7 @@
 
 
 void Cell_sphere_Initialization(thrust::host_vector<Cell>& C, int N) {
-	float middle = Volume_length / 2;
+	float middle = Voxel_num * Voxel_length / 2;
 	float spacing = 10.f;
 	float radius = Tumor_Cell_Radius;
 	float ballr = radius * pow(N, 1.0 / 3) / 1.612 * 1.87;
