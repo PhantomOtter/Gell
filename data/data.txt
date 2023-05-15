@@ -1,1 +1,1 @@
-for csv file output
+The Gell-generated HDS example data (CSV format) displayed in the paper are divided and zipped into Gell_HDS_part1.zip and Gell_HDS_part2.zip.
