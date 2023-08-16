@@ -2,7 +2,6 @@
 A fast and memory-efficient simulator for hybrid/agent-based modeling of biosystems. Please check our paper for more information.
 
 "Gell: A GPU-powered 3D hybrid simulator for large-scale multicellular system"
-
 https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0288721
 
 A HDS example
